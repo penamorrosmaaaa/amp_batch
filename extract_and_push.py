@@ -53,14 +53,18 @@ used_urls = set()
 # ----------------------------------------------------------------
 # HTTP Helpers (with longer waits & retries)
 # ----------------------------------------------------------------
-def safe_request(url, retries=5, delay=5, timeout=10):
+def safe_request(url, retries=5, delay=5, timeout=20):
     """
     Try up to `retries` times, waiting `delay` seconds between attempts,
     before giving up on fetching url.
     """
     for attempt in range(1, retries + 1):
         try:
-            resp = requests.get(url, timeout=timeout)
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+            }
+            resp = requests.get(url, timeout=timeout, headers=headers)
+
             if resp.status_code == 200:
                 logger.debug(f"[{attempt}/{retries}] Fetched {url}")
                 return resp
