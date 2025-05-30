@@ -512,6 +512,36 @@ def extract_metrics(report):
     }
 
 def run_lighthouse(url, retries=3, delay=2):
+    import os
+    os.environ['CHROME_PATH'] = '/usr/bin/google-chrome-stable'
+
+    for attempt in range(retries):
+        try:
+            # Limpia procesos previos de Chrome
+            subprocess.run("pkill -f chrome", shell=True)
+
+            subprocess.run([
+                "lighthouse", url,
+                "--quiet",
+                "--output=json",
+                "--output-path=report.json",
+                "--chrome-flags=--headless --no-sandbox --disable-gpu --disable-dev-shm-usage"
+            ], env=os.environ, check=True, timeout=90)
+
+            subprocess.run("pkill -f chrome", shell=True)
+
+            with open("report.json", "r") as f:
+                report = json.load(f)
+            return extract_metrics(report)
+        except subprocess.TimeoutExpired:
+            logger.warning(f"Lighthouse attempt {attempt + 1} timed out for {url}")
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Lighthouse attempt {attempt + 1} failed for {url}: {e}")
+        except Exception as e:
+            logger.warning(f"Lighthouse attempt {attempt + 1} unknown error for {url}: {e}")
+        time.sleep(delay)
+    return None
+
     for attempt in range(retries):
         try:
             # Clean up old Chrome instances
