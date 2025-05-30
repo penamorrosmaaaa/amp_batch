@@ -516,13 +516,13 @@ def run_lighthouse(url, retries=3, delay=2):
         try:
             # Clean up old Chrome instances
             subprocess.run("pkill -f chrome", shell=True)
-
             subprocess.run([
                 "lighthouse", url,
                 "--quiet",
-                "--chrome-flags='--headless'",
+                "--chrome-flags=--headless --no-sandbox --disable-gpu --disable-dev-shm-usage",
                 "--output=json", "--output-path=report.json"
             ], check=True)
+
 
             # Clean again just in case
             subprocess.run("pkill -f chrome", shell=True)
