@@ -161,8 +161,12 @@ def convert_to_amp(url, company):
     if not url or not url.startswith("http"):
         return url
     
+    # Milenio: replace www with amp
+    if company == "Milenio":
+        return url.replace("www.milenio.com", "amp.milenio.com")
+    
     # Universal: add ?outputType=amp
-    if company == "Universal":
+    elif company == "Universal":
         if "?" in url:
             return url + "&outputType=amp"
         else:
@@ -177,9 +181,9 @@ def convert_to_amp(url, company):
     
     # All TV Azteca companies: add ?_amp=true
     elif any(comp in company for comp in ["Azteca", "ADN40", "Deportes", "A+", "Noticias", "Quintana Roo", "Bajío", 
-                                          "Ciudad Juárez", "Yúcatan", "Jalisco", "Puebla", "Veracruz", 
-                                          "Baja California", "Morelos", "Guerrero", "Chiapas", "Sinaloa",
-                                          "Aguascalientes", "Queretaro", "Chihuahua", "Laguna"]):
+                                         "Ciudad Juárez", "Yúcatan", "Jalisco", "Puebla", "Veracruz", 
+                                         "Baja California", "Morelos", "Guerrero", "Chiapas", "Sinaloa",
+                                         "Aguascalientes", "Queretaro", "Chihuahua", "Laguna"]):
         if "?" in url:
             return url + "&_amp=true"
         else:
@@ -191,11 +195,29 @@ def convert_to_amp(url, company):
 # ----------------------------------------------------------------
 # Brand‐specific extractors
 # ----------------------------------------------------------------
+def get_milenio():
+    root = fetch_xml_root("https://www.milenio.com/sitemap/google-news/sitemap-google-news-current-1.xml")
+    if root is None:
+        return [], []
+    ns = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    nota, video = [], []
+    for loc in root.xpath("//ns:url/ns:loc", namespaces=ns):
+        url = loc.text.strip().lower()
+        is_video = (
+            url.endswith("-video") or 
+            "/video/" in url or 
+            url.split("/")[-1] == "video" or
+            "videos" in url or
+            "videogallery" in url
+        )
+        (video if is_video else nota).append(url)
+    return nota, video
+
 def get_as():
     """
     Parses the AS MRSS feeds:
-      • Opinion feed for nota → <item><link>
-      • Video feed for video → <item><link>
+     • Opinion feed for nota → <item><link>
+     • Video feed for video → <item><link>
     """
     nota, video = [], []
 
@@ -257,14 +279,6 @@ def get_tvazteca(nota_url, video_url):
 companies = {
     "Universal": get_universal(),
     "As": get_as(),
-    "Azteca 7": get_tvazteca(
-        "https://www.tvazteca.com/azteca7/newslatest-sitemap-latest.xml",
-        "https://www.tvazteca.com/azteca7/video-sitemap-latest.xml"
-    ),
-    "Azteca UNO": get_tvazteca(
-        "https://www.tvazteca.com/aztecauno/newslatest-sitemap-latest.xml",
-        "https://www.tvazteca.com/aztecauno/video-sitemap-latest.xml"
-    ),
     "ADN40": get_tvazteca(
         "https://www.adn40.mx/newslatest-sitemap-latest.xml",
         "https://www.adn40.mx/video-sitemap-latest.xml"
@@ -347,6 +361,8 @@ companies = {
     ),
 }
 
+
+
 # ----------------------------------------------------------------
 # Gallery extractor for specific image sitemaps
 # ----------------------------------------------------------------
@@ -373,9 +389,6 @@ def extract_gallery_urls(sitemap_url):
 
 # Only keep the requested image galleries
 gallery_sitemaps = {
-    # "img.Azteca7": "https://www.tvazteca.com/azteca7/image-sitemap-latest.xml", # Removed as requested
-    # "img.AztecaUNO": "https://www.tvazteca.com/aztecauno/image-sitemap-latest.xml", # Removed as requested
-    # "img.AztecaNoticias": "https://www.tvazteca.com/noticias/image-sitemap-latest.xml" # Removed as requested
 }
 
 # Pre‐fetch gallery URLs
@@ -404,6 +417,9 @@ try:
 
             # 1) News/video URLs from each company
             for comp, (nota_list, video_list) in companies.items():
+                if comp == "Milenio":
+                    continue  # skip Milenio
+
                 urls = nota_list if content_type == "nota" else video_list
 
                 if i < len(urls):
@@ -434,6 +450,9 @@ try:
 
             # 2) Gallery URLs
             for gal_key, galleries in gallery_urls_map.items():
+                if gal_key in ["img.Azteca7", "img.AztecaUNO", "img.AztecaNoticias"]:
+                    continue  # skip these gallery image sources
+
                 company_name = gal_key.split(".")[1]  # Extract name like "Azteca7" from "img.Azteca7"
                 
                 if i < len(galleries):
