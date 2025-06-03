@@ -277,8 +277,17 @@ def get_tvazteca(nota_url, video_url):
 # Company map - Only the requested companies
 # ----------------------------------------------------------------
 companies = {
+    "Milenio": get_milenio(),
     "Universal": get_universal(),
     "As": get_as(),
+    "Azteca 7": get_tvazteca(
+        "https://www.tvazteca.com/azteca7/newslatest-sitemap-latest.xml",
+        "https://www.tvazteca.com/azteca7/video-sitemap-latest.xml"
+    ),
+    "Azteca UNO": get_tvazteca(
+        "https://www.tvazteca.com/aztecauno/newslatest-sitemap-latest.xml",
+        "https://www.tvazteca.com/aztecauno/video-sitemap-latest.xml"
+    ),
     "ADN40": get_tvazteca(
         "https://www.adn40.mx/newslatest-sitemap-latest.xml",
         "https://www.adn40.mx/video-sitemap-latest.xml"
@@ -361,8 +370,6 @@ companies = {
     ),
 }
 
-
-
 # ----------------------------------------------------------------
 # Gallery extractor for specific image sitemaps
 # ----------------------------------------------------------------
@@ -389,6 +396,9 @@ def extract_gallery_urls(sitemap_url):
 
 # Only keep the requested image galleries
 gallery_sitemaps = {
+    "img.Azteca7": "https://www.tvazteca.com/azteca7/image-sitemap-latest.xml",
+    "img.AztecaUNO": "https://www.tvazteca.com/aztecauno/image-sitemap-latest.xml",
+    "img.AztecaNoticias": "https://www.tvazteca.com/noticias/image-sitemap-latest.xml"
 }
 
 # Pre‐fetch gallery URLs
@@ -417,9 +427,6 @@ try:
 
             # 1) News/video URLs from each company
             for comp, (nota_list, video_list) in companies.items():
-                if comp == "Milenio":
-                    continue  # skip Milenio
-
                 urls = nota_list if content_type == "nota" else video_list
 
                 if i < len(urls):
@@ -450,9 +457,6 @@ try:
 
             # 2) Gallery URLs
             for gal_key, galleries in gallery_urls_map.items():
-                if gal_key in ["img.Azteca7", "img.AztecaUNO", "img.AztecaNoticias"]:
-                    continue  # skip these gallery image sources
-
                 company_name = gal_key.split(".")[1]  # Extract name like "Azteca7" from "img.Azteca7"
                 
                 if i < len(galleries):
